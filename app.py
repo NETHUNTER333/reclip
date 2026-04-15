@@ -5,6 +5,8 @@ import json
 import subprocess
 import threading
 from flask import Flask, request, jsonify, send_file, render_template
+from youtube_transcript_api import YouTubeTranscriptApi
+import re
 
 app = Flask(__name__)
 DOWNLOAD_DIR = os.path.join(os.path.dirname(__file__), "downloads")
@@ -12,6 +14,17 @@ os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 
 jobs = {}
 
+def extract_video_id(url):
+    # Handles multiple YouTube URL formats
+    patterns = [
+        r"v=([^&]+)",
+        r"youtu\.be/([^?]+)"
+    ]
+    for p in patterns:
+        match = re.search(p, url)
+        if match:
+            return match.group(1)
+    return None
 
 def run_download(job_id, url, format_choice, format_id):
     job = jobs[job_id]
@@ -185,7 +198,42 @@ def download_file(job_id):
         return jsonify({"error": "File not ready"}), 404
     return send_file(job["file"], as_attachment=True, download_name=job["filename"])
 
+@app.route("/api/transcript", methods=["POST"])
+def get_transcript():
+    data = request.json
+    url = data.get("url", "").strip()
 
+    if not url:
+        return jsonify({"error": "No URL provided"}), 400
+
+    video_id = extract_video_id(url)
+
+    if not video_id:
+        return jsonify({"error": "Invalid YouTube URL"}), 400
+
+    try:
+        try:
+            transcript = YouTubeTranscriptApi.get_transcript(
+                video_id,
+                languages=['en', 'hi']
+            )
+        except:
+            transcript = YouTubeTranscriptApi.get_transcript(video_id)
+
+        # Clean + remove duplicates
+        text = " ".join(dict.fromkeys([x["text"] for x in transcript]))
+
+        # Limit size (important for AI)
+        text = text[:5000]
+
+        return jsonify({
+            "transcript": text
+        })
+
+    except:
+        return jsonify({
+            "error": "Transcript not available for this video"
+        }), 400
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8899))
     host = os.environ.get("HOST", "127.0.0.1")
