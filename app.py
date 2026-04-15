@@ -107,7 +107,10 @@ def get_info():
     try:
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
         if result.returncode != 0:
-            return jsonify({"error": result.stderr.strip().split("\n")[-1]}), 400
+            return jsonify({
+    "error": result.stderr,
+    "debug": result.stdout
+}), 400
 
         info = json.loads(result.stdout)
 
