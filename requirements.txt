@@ -1,3 +1,4 @@
-flask
-yt-dlp
-youtube-transcript-api
+flask==3.1.0
+yt-dlp @ https://github.com/yt-dlp/yt-dlp-nightly-builds/releases/latest/download/yt-dlp.tar.gz
+youtube-transcript-api==1.0.3
+ffmpeg-python==0.2.0
