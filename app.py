@@ -28,12 +28,21 @@ def run_ytdlp_with_fallback(base_cmd, timeout=300):
         cmd = base_cmd.copy()
 
         inject = [
-            "--extractor-args", f"youtube:player_client={client}",
-            "--user-agent", "com.google.android.youtube/17.31.35 (Linux; U; Android 11)",
-            "--sleep-requests", "2",
-            "--retries", "10",
-            "--fragment-retries", "10"
-        ]
+ "--cookies",
+ "/etc/secrets/cookies.txt",
+
+ "--extractor-args",
+ f"youtube:player_client={client};player_skip=webpage",
+
+ "--user-agent",
+ "com.google.android.youtube/17.31.35 (Linux; U; Android 11)",
+
+ "--js-runtimes","deno",
+
+ "--sleep-requests","5",
+ "--retries","15",
+ "--fragment-retries","15"
+],
 
         cmd = [cmd[0]] + inject + cmd[1:]
 
